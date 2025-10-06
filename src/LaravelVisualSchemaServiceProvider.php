@@ -34,13 +34,13 @@ class LaravelVisualSchemaServiceProvider extends ServiceProvider
             __DIR__.'/../config/schema-designer.php' => config_path('schema-designer.php'),
         ], 'config');
 
+        // Publish static assets (CDN-compatible, no build process required)
         $this->publishes([
-            __DIR__.'/../resources/js' => resource_path('js/vendor/schema-designer'),
-            __DIR__.'/../resources/css' => resource_path('css/vendor/schema-designer'),
+            __DIR__ . '/../resources/assets' => public_path('vendor/laravel-visual-schema'),
         ], 'assets');
 
         $this->publishes([
-            __DIR__.'/../resources/views' => resource_path('views/vendor/schema-designer'),
+            __DIR__ . '/../resources/views' => resource_path('views/vendor/laravel-visual-schema'),
         ], 'views');
 
         $this->registerRoutes();

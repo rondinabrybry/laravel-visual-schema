@@ -9,7 +9,7 @@ A comprehensive drag-and-drop visual database designer for Laravel applications.
 
 ## Features
 
-- 🎨 **Drag & Drop Interface** - Built with React and TailwindCSS
+- 🎨 **Drag & Drop Interface** - Built with Alpine.js and Fabric.js (No build process required)
 - 🔗 **Visual Relationships** - Draw connections between tables
 - 💾 **Persistent Layouts** - Save and reload your designs exactly as arranged
 - 📤 **Multiple Export Formats** - PNG, SVG, and PDF export
@@ -19,13 +19,31 @@ A comprehensive drag-and-drop visual database designer for Laravel applications.
 - ↩️ **Undo/Redo** - Full action history
 - 🔍 **Zoom & Pan** - Navigate large schemas easily
 - 🚀 **Laravel 12 Ready** - Full compatibility with Laravel 10, 11, and 12
+- 🏠 **Shared Hosting Compatible** - No Node.js, npm, or build processes required
+- 📦 **CDN-Powered Frontend** - Uses Alpine.js and Fabric.js from CDN for zero compilation
 
 ## Installation
 
-Install via Composer:
+### Requirements
+
+- **PHP**: 8.2 or higher
+- **Laravel**: 10.x, 11.x, or 12.x
+- **Web Server**: Apache, Nginx, or any server that supports Laravel
+- **Hosting**: Compatible with shared hosting (cPanel, Plesk, etc.)
+- **No Node.js Required**: Works without npm, webpack, or any JavaScript build tools
+
+### Install via Composer
 
 ```bash
 composer require brybry/laravel-visual-schema
+```
+
+### Publish Assets (Shared Hosting Compatible)
+
+Publish the static CSS/JS files (no compilation needed):
+
+```bash
+php artisan vendor:publish --provider="BryBry\LaravelVisualSchema\LaravelVisualSchemaServiceProvider" --tag="assets"
 ```
 
 Publish the configuration file:
@@ -34,11 +52,39 @@ Publish the configuration file:
 php artisan vendor:publish --provider="BryBry\LaravelVisualSchema\LaravelVisualSchemaServiceProvider" --tag="config"
 ```
 
-Publish the assets:
+Publish views for customization (optional):
 
 ```bash
-php artisan vendor:publish --provider="BryBry\LaravelVisualSchema\LaravelVisualSchemaServiceProvider" --tag="assets"
+php artisan vendor:publish --provider="BryBry\LaravelVisualSchema\LaravelVisualSchemaServiceProvider" --tag="views"
 ```
+
+### For Shared Hosting Users
+
+After publishing assets, simply upload your Laravel application via FTP. The package uses CDN libraries and requires no build process:
+
+- ✅ **Upload via FTP/SFTP**
+- ✅ **No Node.js required**
+- ✅ **No npm install needed**
+- ✅ **No build commands**
+- ✅ **Works on cPanel/Plesk**
+
+### Technology Stack
+
+**Frontend (Zero Build Process):**
+- **Alpine.js 3.13+** - Reactive JavaScript framework via CDN
+- **Fabric.js 5.3+** - Canvas manipulation library via CDN
+- **jsPDF 2.5+** - PDF export functionality via CDN
+- **Pure CSS** - No preprocessing required
+
+**Backend:**
+- **Laravel 10|11|12** - Full framework compatibility
+- **PHP 8.2+** - Modern PHP features
+
+**Hosting Compatibility:**
+- **Shared Hosting** - cPanel, Plesk, DirectAdmin
+- **VPS/Dedicated** - Full server control
+- **Cloud Platforms** - AWS, DigitalOcean, Linode
+- **FTP Upload** - Traditional file upload supported
 
 ## Usage
 

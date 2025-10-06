@@ -1,4 +1,4 @@
-name: Tests
+name: Tests (Shared Hosting Compatible)
 
 on:
   push:
@@ -60,30 +60,27 @@ jobs:
     - name: Execute tests
       run: vendor/bin/phpunit
 
-  frontend-test:
+  static-assets-test:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Run linting
-      run: npm run lint
-
-    - name: Build assets
-      run: npm run build
-
-    - name: Check build output
+    - name: Check static assets exist
       run: |
-        if [ ! -d "public/build" ]; then
-          echo "Build directory not found!"
+        if [ ! -f "resources/assets/js/schema-designer.js" ]; then
+          echo "Main JavaScript file not found!"
           exit 1
         fi
+        if [ ! -f "resources/assets/css/schema-designer.css" ]; then
+          echo "Main CSS file not found!"
+          exit 1
+        fi
+        echo "All static assets found - no build process required!"
+
+    - name: Validate CDN dependencies
+      run: |
+        curl -f https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js > /dev/null
+        curl -f https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js > /dev/null
+        curl -f https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js > /dev/null
+        echo "All CDN dependencies are accessible!"

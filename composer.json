@@ -1,8 +1,8 @@
 {
     "name": "brybry/laravel-visual-schema",
-    "description": "A drag-and-drop visual database designer for Laravel with export capabilities",
+    "description": "A drag-and-drop visual database designer for Laravel. Shared hosting compatible with no build process required.",
     "type": "library",
-    "keywords": ["laravel", "database", "schema", "visual", "designer", "erd"],
+    "keywords": ["laravel", "database", "schema", "visual", "designer", "erd", "shared-hosting", "alpine", "fabric", "no-build"],
     "license": "MIT",
     "authors": [
         {

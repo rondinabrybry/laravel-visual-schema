@@ -21,9 +21,16 @@ class SchemaDesignerController extends Controller
     public function index()
     {
         $schemas = $this->storageService->list();
+        $schema = (object) [
+            'id' => null,
+            'name' => 'Untitled Schema',
+            'tables' => [],
+            'relationships' => []
+        ];
         
-        return view('schema-designer::designer', [
+        return view('laravel-visual-schema::schema-designer', [
             'schemas' => $schemas,
+            'schema' => $schema,
             'config' => [
                 'canvas' => config('schema-designer.canvas'),
                 'theme' => config('schema-designer.theme'),

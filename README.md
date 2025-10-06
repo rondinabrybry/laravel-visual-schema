@@ -10,14 +10,18 @@ A comprehensive drag-and-drop visual database designer for Laravel applications.
 ## Features
 
 - 🎨 **Drag & Drop Interface** - Built with Alpine.js and Fabric.js (No build process required)
-- 🔗 **Visual Relationships** - Draw connections between tables
+- 🧰 **Professional Toolbox** - Quick table creation, templates, and design tools
+- 🔗 **Visual Relationships** - Draw connections between tables with smart routing
 - 💾 **Persistent Layouts** - Save and reload your designs exactly as arranged
-- 📤 **Multiple Export Formats** - PNG, SVG, and PDF export
+- 📤 **Multiple Export Formats** - PNG, SVG, and PDF export (grid-free exports)
 - 🔐 **Secure Access Control** - Environment-based restrictions and middleware protection
-- 📱 **Responsive Design** - Works on desktop and tablet devices
-- 🌙 **Dark/Light Mode** - Theme support
-- ↩️ **Undo/Redo** - Full action history
-- 🔍 **Zoom & Pan** - Navigate large schemas easily
+- 📱 **Responsive Design** - Works on desktop, tablet, and mobile devices
+- 🌙 **Dark/Light Mode** - Theme support with automatic grid adaptation
+- ↩️ **Undo/Redo System** - Full action history with 50-step memory
+- 🔍 **Advanced Canvas** - Zoom, pan, grid snapping, and alignment tools
+- 📐 **Alignment Tools** - Professional layout with distribute and align functions
+- ⚡ **Quick Actions** - Table templates (Users, Posts, Categories), keyboard shortcuts
+- 🎯 **Smart Grid System** - Adjustable dot grid with snap-to-grid functionality
 - 🚀 **Laravel 12 Ready** - Full compatibility with Laravel 10, 11, and 12
 - 🏠 **Shared Hosting Compatible** - No Node.js, npm, or build processes required
 - 📦 **CDN-Powered Frontend** - Uses Alpine.js and Fabric.js from CDN for zero compilation
@@ -67,6 +71,43 @@ After publishing assets, simply upload your Laravel application via FTP. The pac
 - ✅ **No npm install needed**
 - ✅ **No build commands**
 - ✅ **Works on cPanel/Plesk**
+
+## 🎮 Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl + S` | Save schema |
+| `Ctrl + Z` | Undo |
+| `Ctrl + Y` | Redo |
+| `Ctrl + D` | Duplicate selected object |
+| `Ctrl + G` | Group selected objects |
+| `Ctrl + U` | Ungroup selected objects |
+| `Ctrl + T` | Add new table |
+| `Ctrl + 0` | Reset zoom to 100% |
+| `Ctrl + +` | Zoom in |
+| `Ctrl + -` | Zoom out |
+| `Delete` | Delete selected object |
+| `Enter` | Edit table name (when table selected) |
+| `Space` | Fit canvas to window |
+| `Escape` | Deselect all objects |
+
+## 🧰 Toolbox Features
+
+### Quick Add Tools
+- **One-Click Tables**: Add tables with default Laravel structure
+- **Custom Tables**: Quick input for table names
+- **Template Library**: Pre-built tables (Users, Posts, Categories)
+
+### Alignment Tools
+- **Align Objects**: Left, Right, Top, Bottom, Center
+- **Distribute**: Even spacing horizontally or vertically  
+- **Layer Control**: Send to back/front, grouping
+
+### Canvas Tools
+- **Smart Grid**: Adjustable dot grid (10-50px spacing)
+- **Snap to Grid**: Automatic alignment assistance
+- **Grid Toggle**: Show/hide grid overlay
+- **Zoom Controls**: Precise zoom with percentage display
 
 ### Technology Stack
 

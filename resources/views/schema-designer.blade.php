@@ -13,9 +13,28 @@
         <div class="schema-toolbar">
             <h1>{{ $schema->name ?? 'Visual Schema Designer' }}</h1>
             
+            <!-- Quick Actions -->
+            <div class="toolbar-section">
+                <button @click="addQuickTable()" class="btn btn-primary btn-sm" title="Add Table">
+                    ➕ Table
+                </button>
+                <div class="dropdown" x-data="{ open: false }">
+                    <button @click="open = !open" class="btn btn-secondary btn-sm">
+                        📋 Templates ▼
+                    </button>
+                    <div x-show="open" @click.away="open = false" class="dropdown-menu">
+                        <button @click="addTableTemplate('users'); open = false" class="dropdown-item">👤 Users</button>
+                        <button @click="addTableTemplate('posts'); open = false" class="dropdown-item">📝 Posts</button>
+                        <button @click="addTableTemplate('categories'); open = false" class="dropdown-item">📁 Categories</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="toolbar-divider"></div>
+            
             <!-- File Operations -->
             <div class="toolbar-section">
-                <button @click="saveSchema()" :disabled="isLoading" class="btn btn-primary btn-sm">
+                <button @click="saveSchema()" :disabled="isLoading" class="btn btn-success btn-sm">
                     <span x-show="!isLoading">💾 Save</span>
                     <span x-show="isLoading" class="loading">
                         <div class="spinner"></div>
@@ -29,8 +48,52 @@
             
             <div class="toolbar-divider"></div>
             
+            <!-- Alignment Tools -->
+            <div class="toolbar-section">
+                <div class="dropdown" x-data="{ open: false }">
+                    <button @click="open = !open" class="btn btn-secondary btn-sm" title="Alignment Tools">
+                        📐 Align ▼
+                    </button>
+                    <div x-show="open" @click.away="open = false" class="dropdown-menu">
+                        <button @click="alignObjects('left'); open = false" class="dropdown-item">⬅️ Align Left</button>
+                        <button @click="alignObjects('center-horizontal'); open = false" class="dropdown-item">↔️ Center Horizontal</button>
+                        <button @click="alignObjects('right'); open = false" class="dropdown-item">➡️ Align Right</button>
+                        <div class="dropdown-divider"></div>
+                        <button @click="alignObjects('top'); open = false" class="dropdown-item">⬆️ Align Top</button>
+                        <button @click="alignObjects('center-vertical'); open = false" class="dropdown-item">↕️ Center Vertical</button>
+                        <button @click="alignObjects('bottom'); open = false" class="dropdown-item">⬇️ Align Bottom</button>
+                        <div class="dropdown-divider"></div>
+                        <button @click="distributeObjects('horizontal'); open = false" class="dropdown-item">↔️ Distribute Horizontal</button>
+                        <button @click="distributeObjects('vertical'); open = false" class="dropdown-item">↕️ Distribute Vertical</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="toolbar-divider"></div>
+            
+            <!-- Object Tools -->
+            <div class="toolbar-section">
+                <button @click="duplicateObject()" class="btn btn-secondary btn-icon" title="Duplicate (Ctrl+D)">
+                    📋
+                </button>
+                <button @click="sendToBack()" class="btn btn-secondary btn-icon" title="Send to Back">
+                    ⬇️
+                </button>
+                <button @click="sendToFront()" class="btn btn-secondary btn-icon" title="Bring to Front">
+                    ⬆️
+                </button>
+                <button @click="groupObjects()" class="btn btn-secondary btn-icon" title="Group (Ctrl+G)">
+                    📦
+                </button>
+            </div>
+            
+            <div class="toolbar-divider"></div>
+            
             <!-- View Controls -->
             <div class="toolbar-section">
+                <button @click="toggleGrid()" class="btn btn-secondary btn-icon" title="Toggle Grid" :class="{ 'active': showGrid }">
+                    ⊞
+                </button>
                 <button @click="zoomIn()" class="btn btn-secondary btn-icon" title="Zoom In">
                     🔍+
                 </button>
@@ -64,10 +127,10 @@
             
             <!-- Utility Actions -->
             <div class="toolbar-section">
-                <button @click="undo()" :disabled="historyIndex <= 0" class="btn btn-secondary btn-icon" title="Undo">
+                <button @click="undo()" :disabled="historyIndex <= 0" class="btn btn-secondary btn-icon" title="Undo (Ctrl+Z)">
                     ↶
                 </button>
-                <button @click="redo()" :disabled="historyIndex >= history.length - 1" class="btn btn-secondary btn-icon" title="Redo">
+                <button @click="redo()" :disabled="historyIndex >= history.length - 1" class="btn btn-secondary btn-icon" title="Redo (Ctrl+Y)">
                     ↷
                 </button>
                 <button @click="clearCanvas()" class="btn btn-danger btn-sm">
@@ -79,19 +142,138 @@
                 </button>
             </div>
             
-            <!-- Mobile Panel Toggle -->
-            <div class="toolbar-section md:hidden">
-                <button @click="showPropertyPanel = !showPropertyPanel" class="btn btn-secondary btn-icon">
-                    ☰
+            <!-- Panel Toggles -->
+            <div class="toolbar-section">
+                <button @click="showToolbox = !showToolbox" class="btn btn-secondary btn-icon" title="Toggle Toolbox">
+                    🧰
+                </button>
+                <button @click="showPropertyPanel = !showPropertyPanel" class="btn btn-secondary btn-icon" title="Toggle Properties">
+                    ⚙️
                 </button>
             </div>
         </div>
         
         <!-- Main Content -->
         <div class="schema-content">
+            <!-- Toolbox Sidebar -->
+            <div class="toolbox-sidebar" x-show="showToolbox" :class="{ 'open': showToolbox }">
+                <div class="toolbox-header">
+                    <h3>🧰 Toolbox</h3>
+                    <button @click="showToolbox = false" class="btn btn-secondary btn-sm">✕</button>
+                </div>
+                
+                <div class="toolbox-content">
+                    <!-- Quick Add Section -->
+                    <div class="toolbox-section">
+                        <h4>Quick Add</h4>
+                        <div class="tool-grid">
+                            <button @click="addQuickTable()" class="tool-button" title="Add Table">
+                                <div class="tool-icon">📊</div>
+                                <div class="tool-label">Table</div>
+                            </button>
+                            <button @click="$refs.tableNameInput.focus(); $refs.tableNameInput.select()" class="tool-button" title="Custom Table">
+                                <div class="tool-icon">➕</div>
+                                <div class="tool-label">Custom</div>
+                            </button>
+                        </div>
+                        
+                        <!-- Quick table name input -->
+                        <div class="form-group">
+                            <input x-ref="tableNameInput" type="text" 
+                                   placeholder="Table name..." 
+                                   class="form-input" 
+                                   @keydown.enter="addQuickTable($event.target.value); $event.target.value = ''">
+                        </div>
+                    </div>
+                    
+                    <!-- Templates Section -->
+                    <div class="toolbox-section">
+                        <h4>Templates</h4>
+                        <div class="template-list">
+                            <button @click="addTableTemplate('users')" class="template-button">
+                                <span class="template-icon">👤</span>
+                                <span class="template-name">Users</span>
+                                <span class="template-desc">8 columns</span>
+                            </button>
+                            <button @click="addTableTemplate('posts')" class="template-button">
+                                <span class="template-icon">📝</span>
+                                <span class="template-name">Posts</span>
+                                <span class="template-desc">8 columns</span>
+                            </button>
+                            <button @click="addTableTemplate('categories')" class="template-button">
+                                <span class="template-icon">📁</span>
+                                <span class="template-name">Categories</span>
+                                <span class="template-desc">7 columns</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Canvas Tools -->
+                    <div class="toolbox-section">
+                        <h4>Canvas</h4>
+                        <div class="canvas-tools">
+                            <div class="form-group">
+                                <label class="form-label">Grid Size</label>
+                                <input type="range" x-model="gridSize" min="10" max="50" step="5" 
+                                       @input="setupGrid()" class="range-input">
+                                <span class="range-value" x-text="gridSize + 'px'"></span>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" x-model="showGrid" @change="toggleGrid()" class="checkbox" id="showGrid">
+                                <label for="showGrid" class="checkbox-label">Show Grid</label>
+                            </div>
+                            
+                            <button @click="fitToWindow()" class="btn btn-secondary btn-sm w-full">
+                                📏 Fit to Window
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Selection Tools -->
+                    <div class="toolbox-section">
+                        <h4>Selection</h4>
+                        <div class="selection-tools">
+                            <button @click="duplicateObject()" class="btn btn-secondary btn-sm w-full">
+                                📋 Duplicate
+                            </button>
+                            <button @click="deleteSelected()" class="btn btn-danger btn-sm w-full">
+                                🗑️ Delete
+                            </button>
+                            
+                            <div class="tool-row">
+                                <button @click="sendToBack()" class="btn btn-secondary btn-sm">⬇️ Back</button>
+                                <button @click="sendToFront()" class="btn btn-secondary btn-sm">⬆️ Front</button>
+                            </div>
+                            
+                            <div class="tool-row">
+                                <button @click="groupObjects()" class="btn btn-secondary btn-sm">📦 Group</button>
+                                <button @click="ungroupObjects()" class="btn btn-secondary btn-sm">📦⊟ Ungroup</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Canvas Area -->
             <div class="canvas-container">
                 <canvas x-ref="canvas" id="schema-canvas"></canvas>
+                
+                <!-- Canvas Info Overlay -->
+                <div class="canvas-info">
+                    <div class="info-item">
+                        <span>Tables: </span>
+                        <strong x-text="currentSchema.tables.length"></strong>
+                    </div>
+                    <div class="info-item">
+                        <span>Relations: </span>
+                        <strong x-text="currentSchema.relationships.length"></strong>
+                    </div>
+                    <div class="info-item" x-show="showGrid">
+                        <span>Grid: </span>
+                        <strong x-text="gridSize + 'px'"></strong>
+                    </div>
+                </div>
                 
                 <!-- Zoom Controls -->
                 <div class="zoom-controls">

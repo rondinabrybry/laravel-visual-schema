@@ -31,8 +31,11 @@ function schemaDesigner() {
         
         // UI State
         showPropertyPanel: true,
+        showToolbox: true,
         activeTab: 'tables',
         zoom: 100,
+        gridSize: 20,
+        showGrid: true,
         
         // History for undo/redo
         history: [],
@@ -93,8 +96,13 @@ function schemaDesigner() {
                 selection: true,
                 preserveObjectStacking: true,
                 enableRetinaScaling: true,
-                allowTouchScrolling: true
+                allowTouchScrolling: true,
+                snapToGrid: true,
+                snapAngle: 15
             });
+
+            // Setup grid pattern
+            this.setupGrid();
 
             // Bind canvas events
             this.fabricCanvas.on('selection:created', (e) => {
@@ -135,6 +143,62 @@ function schemaDesigner() {
                 height: rect.height
             });
             
+            this.setupGrid();
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Setup grid pattern on canvas
+         */
+        setupGrid() {
+            if (!this.fabricCanvas || !this.showGrid) return;
+
+            const canvasWidth = this.fabricCanvas.getWidth();
+            const canvasHeight = this.fabricCanvas.getHeight();
+            const gridSize = this.gridSize;
+
+            // Remove existing grid
+            const existingGrid = this.fabricCanvas.getObjects().filter(obj => obj.isGrid);
+            existingGrid.forEach(obj => this.fabricCanvas.remove(obj));
+
+            // Create grid dots
+            const dots = [];
+            for (let x = 0; x <= canvasWidth; x += gridSize) {
+                for (let y = 0; y <= canvasHeight; y += gridSize) {
+                    const dot = new fabric.Circle({
+                        left: x,
+                        top: y,
+                        radius: 1,
+                        fill: this.isDarkMode ? '#374151' : '#e5e7eb',
+                        selectable: false,
+                        evented: false,
+                        isGrid: true,
+                        excludeFromExport: true
+                    });
+                    dots.push(dot);
+                }
+            }
+
+            // Add dots to canvas (send to back)
+            dots.forEach(dot => {
+                this.fabricCanvas.add(dot);
+                this.fabricCanvas.sendToBack(dot);
+            });
+
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Toggle grid visibility
+         */
+        toggleGrid() {
+            this.showGrid = !this.showGrid;
+            if (this.showGrid) {
+                this.setupGrid();
+            } else {
+                const gridObjects = this.fabricCanvas.getObjects().filter(obj => obj.isGrid);
+                gridObjects.forEach(obj => this.fabricCanvas.remove(obj));
+            }
             this.fabricCanvas.renderAll();
         },
 
@@ -166,6 +230,113 @@ function schemaDesigner() {
             
             // Update history
             this.addToHistory(`Added table: ${tableData.name}`);
+            this.saveCanvasState();
+            
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Quick add table with default structure
+         */
+        addQuickTable(tableName = null) {
+            const name = tableName || prompt('Enter table name:');
+            if (!name || !name.trim()) return;
+
+            const tableData = {
+                id: 'table_' + Date.now(),
+                name: name.trim(),
+                columns: [
+                    { name: 'id', type: 'integer', primary: true, nullable: false, autoIncrement: true },
+                    { name: 'created_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false },
+                    { name: 'updated_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false }
+                ],
+                position: { 
+                    x: Math.random() * 400 + 100, 
+                    y: Math.random() * 300 + 100 
+                }
+            };
+
+            // Create visual representation
+            const tableGroup = this.createTableVisual(tableData);
+            this.fabricCanvas.add(tableGroup);
+            
+            // Add to schema data
+            this.currentSchema.tables.push(tableData);
+            
+            // Update history
+            this.addToHistory(`Added quick table: ${tableData.name}`);
+            this.saveCanvasState();
+            
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Add predefined table templates
+         */
+        addTableTemplate(templateType) {
+            const templates = {
+                users: {
+                    name: 'users',
+                    columns: [
+                        { name: 'id', type: 'integer', primary: true, nullable: false, autoIncrement: true },
+                        { name: 'name', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'email', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'email_verified_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'password', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'remember_token', type: 'varchar', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'created_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'updated_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false }
+                    ]
+                },
+                posts: {
+                    name: 'posts',
+                    columns: [
+                        { name: 'id', type: 'integer', primary: true, nullable: false, autoIncrement: true },
+                        { name: 'user_id', type: 'integer', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'title', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'slug', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'content', type: 'text', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'published_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'created_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'updated_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false }
+                    ]
+                },
+                categories: {
+                    name: 'categories',
+                    columns: [
+                        { name: 'id', type: 'integer', primary: true, nullable: false, autoIncrement: true },
+                        { name: 'name', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'slug', type: 'varchar', primary: false, nullable: false, autoIncrement: false },
+                        { name: 'description', type: 'text', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'parent_id', type: 'integer', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'created_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false },
+                        { name: 'updated_at', type: 'timestamp', primary: false, nullable: true, autoIncrement: false }
+                    ]
+                }
+            };
+
+            const template = templates[templateType];
+            if (!template) return;
+
+            const tableData = {
+                id: 'table_' + Date.now(),
+                name: template.name,
+                columns: [...template.columns],
+                position: { 
+                    x: Math.random() * 400 + 100, 
+                    y: Math.random() * 300 + 100 
+                }
+            };
+
+            // Create visual representation
+            const tableGroup = this.createTableVisual(tableData);
+            this.fabricCanvas.add(tableGroup);
+            
+            // Add to schema data
+            this.currentSchema.tables.push(tableData);
+            
+            // Update history
+            this.addToHistory(`Added ${templateType} table`);
             this.saveCanvasState();
             
             this.fabricCanvas.renderAll();
@@ -210,14 +381,15 @@ function schemaDesigner() {
                 ry: 4
             });
 
-            // Table name text
+            // Table name text (editable)
             const nameText = new fabric.Text(tableData.name, {
                 left: tableData.position.x + 10,
                 top: tableData.position.y + 12,
                 fontSize: 14,
                 fontWeight: 'bold',
                 fill: '#ffffff',
-                fontFamily: 'Arial, sans-serif'
+                fontFamily: 'Arial, sans-serif',
+                editable: true
             });
 
             // Column texts
@@ -239,7 +411,11 @@ function schemaDesigner() {
                 selectable: true,
                 hasControls: true,
                 hasBorders: true,
-                lockUniScaling: true
+                lockUniScaling: true,
+                cornerStyle: 'circle',
+                cornerColor: this.isDarkMode ? '#60a5fa' : '#3b82f6',
+                cornerSize: 8,
+                transparentCorners: false
             });
 
             // Add custom properties
@@ -249,7 +425,52 @@ function schemaDesigner() {
                 tableData: tableData
             });
 
+            // Add double-click to edit table name
+            tableGroup.on('mousedblclick', () => {
+                this.editTableName(tableData.id);
+            });
+
             return tableGroup;
+        },
+
+        /**
+         * Edit table name inline
+         */
+        editTableName(tableId) {
+            const table = this.currentSchema.tables.find(t => t.id === tableId);
+            if (!table) return;
+
+            const newName = prompt('Edit table name:', table.name);
+            if (newName && newName.trim() && newName.trim() !== table.name) {
+                const oldName = table.name;
+                table.name = newName.trim();
+                
+                // Update visual representation
+                this.rebuildTableVisual(tableId);
+                
+                this.addToHistory(`Renamed table: ${oldName} → ${newName.trim()}`);
+                this.saveCanvasState();
+            }
+        },
+
+        /**
+         * Rebuild visual representation of a specific table
+         */
+        rebuildTableVisual(tableId) {
+            // Remove old visual
+            const objects = this.fabricCanvas.getObjects();
+            const oldTableObject = objects.find(obj => obj.tableId === tableId);
+            if (oldTableObject) {
+                this.fabricCanvas.remove(oldTableObject);
+            }
+
+            // Find table data and recreate visual
+            const tableData = this.currentSchema.tables.find(t => t.id === tableId);
+            if (tableData) {
+                const tableGroup = this.createTableVisual(tableData);
+                this.fabricCanvas.add(tableGroup);
+                this.fabricCanvas.renderAll();
+            }
         },
 
         /**
@@ -440,15 +661,23 @@ function schemaDesigner() {
             this.isLoading = true;
             
             try {
+                // Temporarily hide grid for export
+                const gridObjects = this.fabricCanvas.getObjects().filter(obj => obj.isGrid);
+                gridObjects.forEach(obj => obj.set('visible', false));
+                
                 const dataURL = this.fabricCanvas.toDataURL({
                     format: 'png',
                     quality: 1,
                     multiplier: 2
                 });
                 
+                // Restore grid visibility
+                gridObjects.forEach(obj => obj.set('visible', this.showGrid));
+                this.fabricCanvas.renderAll();
+                
                 this.downloadFile(dataURL, `${this.currentSchema.name}.png`);
             } catch (error) {
-                console.error('Export to PDF failed:', error);
+                console.error('Export to PNG failed:', error);
                 alert('Export failed. Please try again.');
             } finally {
                 this.isLoading = false;
@@ -462,8 +691,17 @@ function schemaDesigner() {
             this.isLoading = true;
             
             try {
+                // Temporarily hide grid for export
+                const gridObjects = this.fabricCanvas.getObjects().filter(obj => obj.isGrid);
+                gridObjects.forEach(obj => obj.set('visible', false));
+                
                 const svgString = this.fabricCanvas.toSVG();
                 const dataURL = 'data:image/svg+xml;base64,' + btoa(svgString);
+                
+                // Restore grid visibility
+                gridObjects.forEach(obj => obj.set('visible', this.showGrid));
+                this.fabricCanvas.renderAll();
+                
                 this.downloadFile(dataURL, `${this.currentSchema.name}.svg`);
             } catch (error) {
                 console.error('Export to SVG failed:', error);
@@ -483,11 +721,19 @@ function schemaDesigner() {
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('landscape', 'mm', 'a4');
                 
+                // Temporarily hide grid for export
+                const gridObjects = this.fabricCanvas.getObjects().filter(obj => obj.isGrid);
+                gridObjects.forEach(obj => obj.set('visible', false));
+                
                 const imgData = this.fabricCanvas.toDataURL({
                     format: 'png',
                     quality: 1,
                     multiplier: 2
                 });
+                
+                // Restore grid visibility
+                gridObjects.forEach(obj => obj.set('visible', this.showGrid));
+                this.fabricCanvas.renderAll();
                 
                 // Calculate dimensions to fit A4
                 const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -850,6 +1096,22 @@ function schemaDesigner() {
                             e.preventDefault();
                             this.saveSchema();
                             break;
+                        case 'd':
+                            e.preventDefault();
+                            this.duplicateObject();
+                            break;
+                        case 'g':
+                            e.preventDefault();
+                            this.groupObjects();
+                            break;
+                        case 'u':
+                            e.preventDefault();
+                            this.ungroupObjects();
+                            break;
+                        case 't':
+                            e.preventDefault();
+                            this.addQuickTable();
+                            break;
                         case '=':
                         case '+':
                             e.preventDefault();
@@ -874,6 +1136,17 @@ function schemaDesigner() {
                         case 'Escape':
                             this.fabricCanvas.discardActiveObject();
                             this.fabricCanvas.renderAll();
+                            break;
+                        case 'Enter':
+                            // Double-click behavior on Enter
+                            const activeObject = this.fabricCanvas.getActiveObject();
+                            if (activeObject && activeObject.tableId) {
+                                this.editTableName(activeObject.tableId);
+                            }
+                            break;
+                        case ' ':
+                            e.preventDefault();
+                            this.fitToWindow();
                             break;
                     }
                 }
@@ -901,6 +1174,195 @@ function schemaDesigner() {
                 { value: 'many-to-one', label: 'Many to One' },
                 { value: 'many-to-many', label: 'Many to Many' }
             ];
+        },
+
+        /**
+         * Alignment tools
+         */
+        alignObjects(alignment) {
+            const activeObjects = this.fabricCanvas.getActiveObjects();
+            if (activeObjects.length < 2) {
+                alert('Please select at least 2 objects to align');
+                return;
+            }
+
+            let targetValue;
+            switch (alignment) {
+                case 'left':
+                    targetValue = Math.min(...activeObjects.map(obj => obj.left));
+                    activeObjects.forEach(obj => obj.set({ left: targetValue }));
+                    break;
+                case 'right':
+                    targetValue = Math.max(...activeObjects.map(obj => obj.left + obj.width * obj.scaleX));
+                    activeObjects.forEach(obj => obj.set({ left: targetValue - obj.width * obj.scaleX }));
+                    break;
+                case 'top':
+                    targetValue = Math.min(...activeObjects.map(obj => obj.top));
+                    activeObjects.forEach(obj => obj.set({ top: targetValue }));
+                    break;
+                case 'bottom':
+                    targetValue = Math.max(...activeObjects.map(obj => obj.top + obj.height * obj.scaleY));
+                    activeObjects.forEach(obj => obj.set({ top: targetValue - obj.height * obj.scaleY }));
+                    break;
+                case 'center-horizontal':
+                    const centerX = activeObjects.reduce((sum, obj) => sum + obj.left + (obj.width * obj.scaleX) / 2, 0) / activeObjects.length;
+                    activeObjects.forEach(obj => obj.set({ left: centerX - (obj.width * obj.scaleX) / 2 }));
+                    break;
+                case 'center-vertical':
+                    const centerY = activeObjects.reduce((sum, obj) => sum + obj.top + (obj.height * obj.scaleY) / 2, 0) / activeObjects.length;
+                    activeObjects.forEach(obj => obj.set({ top: centerY - (obj.height * obj.scaleY) / 2 }));
+                    break;
+            }
+
+            this.fabricCanvas.renderAll();
+            this.addToHistory(`Aligned objects: ${alignment}`);
+            this.saveCanvasState();
+        },
+
+        /**
+         * Distribute objects evenly
+         */
+        distributeObjects(direction) {
+            const activeObjects = this.fabricCanvas.getActiveObjects();
+            if (activeObjects.length < 3) {
+                alert('Please select at least 3 objects to distribute');
+                return;
+            }
+
+            if (direction === 'horizontal') {
+                activeObjects.sort((a, b) => a.left - b.left);
+                const leftmost = activeObjects[0].left;
+                const rightmost = activeObjects[activeObjects.length - 1].left + activeObjects[activeObjects.length - 1].width * activeObjects[activeObjects.length - 1].scaleX;
+                const totalWidth = rightmost - leftmost;
+                const gap = totalWidth / (activeObjects.length - 1);
+
+                activeObjects.forEach((obj, index) => {
+                    if (index > 0 && index < activeObjects.length - 1) {
+                        obj.set({ left: leftmost + gap * index });
+                    }
+                });
+            } else {
+                activeObjects.sort((a, b) => a.top - b.top);
+                const topmost = activeObjects[0].top;
+                const bottommost = activeObjects[activeObjects.length - 1].top + activeObjects[activeObjects.length - 1].height * activeObjects[activeObjects.length - 1].scaleY;
+                const totalHeight = bottommost - topmost;
+                const gap = totalHeight / (activeObjects.length - 1);
+
+                activeObjects.forEach((obj, index) => {
+                    if (index > 0 && index < activeObjects.length - 1) {
+                        obj.set({ top: topmost + gap * index });
+                    }
+                });
+            }
+
+            this.fabricCanvas.renderAll();
+            this.addToHistory(`Distributed objects: ${direction}`);
+            this.saveCanvasState();
+        },
+
+        /**
+         * Send object to back/front
+         */
+        sendToBack() {
+            const activeObject = this.fabricCanvas.getActiveObject();
+            if (activeObject) {
+                this.fabricCanvas.sendToBack(activeObject);
+                // Keep grid dots at the very back
+                const gridObjects = this.fabricCanvas.getObjects().filter(obj => obj.isGrid);
+                gridObjects.forEach(obj => this.fabricCanvas.sendToBack(obj));
+                this.fabricCanvas.renderAll();
+                this.addToHistory('Sent to back');
+            }
+        },
+
+        sendToFront() {
+            const activeObject = this.fabricCanvas.getActiveObject();
+            if (activeObject) {
+                this.fabricCanvas.bringToFront(activeObject);
+                this.fabricCanvas.renderAll();
+                this.addToHistory('Brought to front');
+            }
+        },
+
+        /**
+         * Group/ungroup selected objects
+         */
+        groupObjects() {
+            const activeObjects = this.fabricCanvas.getActiveObjects();
+            if (activeObjects.length < 2) {
+                alert('Please select at least 2 objects to group');
+                return;
+            }
+
+            const group = new fabric.Group(activeObjects, {
+                cornerStyle: 'circle',
+                cornerColor: this.isDarkMode ? '#60a5fa' : '#3b82f6'
+            });
+
+            this.fabricCanvas.remove(...activeObjects);
+            this.fabricCanvas.add(group);
+            this.fabricCanvas.setActiveObject(group);
+            this.fabricCanvas.renderAll();
+            this.addToHistory('Grouped objects');
+            this.saveCanvasState();
+        },
+
+        ungroupObjects() {
+            const activeObject = this.fabricCanvas.getActiveObject();
+            if (activeObject && activeObject.type === 'group') {
+                const objects = activeObject.getObjects();
+                activeObject.destroy();
+                this.fabricCanvas.remove(activeObject);
+                
+                objects.forEach(obj => {
+                    this.fabricCanvas.add(obj);
+                });
+                
+                this.fabricCanvas.renderAll();
+                this.addToHistory('Ungrouped objects');
+                this.saveCanvasState();
+            }
+        },
+
+        /**
+         * Duplicate selected object
+         */
+        duplicateObject() {
+            const activeObject = this.fabricCanvas.getActiveObject();
+            if (!activeObject) return;
+
+            activeObject.clone((cloned) => {
+                cloned.set({
+                    left: cloned.left + 20,
+                    top: cloned.top + 20
+                });
+
+                // If it's a table, update the data
+                if (cloned.type === 'table' || cloned.tableId) {
+                    const originalTable = this.currentSchema.tables.find(t => t.id === activeObject.tableId);
+                    if (originalTable) {
+                        const newTableData = {
+                            ...originalTable,
+                            id: 'table_' + Date.now(),
+                            name: originalTable.name + '_copy',
+                            position: { x: cloned.left, y: cloned.top }
+                        };
+                        
+                        cloned.set({
+                            tableId: newTableData.id,
+                            tableData: newTableData
+                        });
+                        
+                        this.currentSchema.tables.push(newTableData);
+                    }
+                }
+
+                this.fabricCanvas.add(cloned);
+                this.fabricCanvas.setActiveObject(cloned);
+                this.fabricCanvas.renderAll();
+                this.addToHistory('Duplicated object');
+                this.saveCanvasState();
+            });
         }
     };
 }

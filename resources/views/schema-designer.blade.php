@@ -18,6 +18,13 @@
                 <button @click="addQuickTable()" class="btn btn-primary btn-sm" title="Add Table">
                     ➕ Table
                 </button>
+                <button @click="toggleRelationshipMode()" 
+                        :class="{ 'active': isDrawingRelationship }" 
+                        class="btn btn-success btn-sm" 
+                        title="Draw Relationship">
+                    <span x-show="!isDrawingRelationship">🔗 Relate</span>
+                    <span x-show="isDrawingRelationship">✕ Stop</span>
+                </button>
                 <div class="dropdown" x-data="{ open: false }">
                     <button @click="open = !open" class="btn btn-secondary btn-sm">
                         📋 Templates ▼
@@ -26,6 +33,8 @@
                         <button @click="addTableTemplate('users'); open = false" class="dropdown-item">👤 Users</button>
                         <button @click="addTableTemplate('posts'); open = false" class="dropdown-item">📝 Posts</button>
                         <button @click="addTableTemplate('categories'); open = false" class="dropdown-item">📁 Categories</button>
+                        <div class="dropdown-divider"></div>
+                        <button @click="autoCreateRelationships(); open = false" class="dropdown-item">⚡ Auto-Detect Relations</button>
                     </div>
                 </div>
             </div>
@@ -208,6 +217,33 @@
                         </div>
                     </div>
                     
+                    <!-- ERD Relationships -->
+                    <div class="toolbox-section">
+                        <h4>ERD Relationships</h4>
+                        <div class="erd-tools">
+                            <button @click="toggleRelationshipMode()" 
+                                    :class="{ 'active': isDrawingRelationship }" 
+                                    class="btn btn-primary btn-sm w-full">
+                                <span x-show="!isDrawingRelationship">🔗 Draw Relationship</span>
+                                <span x-show="isDrawingRelationship">✕ Stop Drawing</span>
+                            </button>
+                            
+                            <button @click="autoCreateRelationships()" class="btn btn-success btn-sm w-full">
+                                ⚡ Auto-Detect Relations
+                            </button>
+                            
+                            <div class="relationship-info">
+                                <div class="info-text">
+                                    <strong>How to draw:</strong><br>
+                                    1. Click "Draw Relationship"<br>
+                                    2. Click source table<br>
+                                    3. Click target table<br>
+                                    4. Relationship created!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Canvas Tools -->
                     <div class="toolbox-section">
                         <h4>Canvas</h4>
@@ -368,8 +404,36 @@
                     
                     <!-- Relationships Tab -->
                     <div x-show="activeTab === 'relationships'">
+                        <!-- ERD Drawing Mode -->
                         <div class="property-section">
-                            <h3>Add Relationship</h3>
+                            <h3>ERD Drawing</h3>
+                            <div class="erd-controls">
+                                <button @click="toggleRelationshipMode()" 
+                                        :class="{ 'active': isDrawingRelationship }" 
+                                        class="btn w-full"
+                                        :class="isDrawingRelationship ? 'btn-danger' : 'btn-primary'">
+                                    <span x-show="!isDrawingRelationship">🔗 Start Drawing Relationships</span>
+                                    <span x-show="isDrawingRelationship">✕ Stop Drawing Mode</span>
+                                </button>
+                                
+                                <button @click="autoCreateRelationships()" class="btn btn-success btn-sm w-full">
+                                    ⚡ Auto-Detect Foreign Keys
+                                </button>
+                                
+                                <div x-show="isDrawingRelationship" class="drawing-instructions">
+                                    <div class="alert alert-info">
+                                        <strong>Drawing Mode Active:</strong><br>
+                                        • Click on a source table<br>
+                                        • Then click on target table<br>
+                                        • Relationship will be created<br>
+                                        • Press Escape to cancel
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="property-section">
+                            <h3>Manual Relationship</h3>
                             
                             <!-- From Table -->
                             <div class="form-group">
@@ -382,6 +446,18 @@
                                 </select>
                             </div>
                             
+                            <!-- From Column -->
+                            <div class="form-group" x-show="newRelationship.fromTable">
+                                <label class="form-label">From Column</label>
+                                <select x-model="newRelationship.fromColumn" class="form-select">
+                                    <template x-for="table in currentSchema.tables.filter(t => t.id === newRelationship.fromTable)" :key="table.id">
+                                        <template x-for="column in table.columns" :key="column.name">
+                                            <option :value="column.name" x-text="column.name + ' (' + column.type + ')'"></option>
+                                        </template>
+                                    </template>
+                                </select>
+                            </div>
+                            
                             <!-- To Table -->
                             <div class="form-group">
                                 <label class="form-label">To Table</label>
@@ -389,6 +465,18 @@
                                     <option value="">Select table...</option>
                                     <template x-for="table in currentSchema.tables" :key="table.id">
                                         <option :value="table.id" x-text="table.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            
+                            <!-- To Column -->
+                            <div class="form-group" x-show="newRelationship.toTable">
+                                <label class="form-label">To Column</label>
+                                <select x-model="newRelationship.toColumn" class="form-select">
+                                    <template x-for="table in currentSchema.tables.filter(t => t.id === newRelationship.toTable)" :key="table.id">
+                                        <template x-for="column in table.columns" :key="column.name">
+                                            <option :value="column.name" x-text="column.name + ' (' + column.type + ')'"></option>
+                                        </template>
                                     </template>
                                 </select>
                             </div>
@@ -405,23 +493,26 @@
                             
                             <!-- Actions -->
                             <div class="form-group">
-                                <button @click="addRelationship()" :disabled="!newRelationship.fromTable || !newRelationship.toTable" class="btn btn-primary btn-sm">
-                                    Add Relationship
+                                <button @click="addRelationship()" :disabled="!newRelationship.fromTable || !newRelationship.toTable" class="btn btn-primary btn-sm w-full">
+                                    Create Relationship
                                 </button>
                             </div>
                         </div>
                         
                         <!-- Existing Relationships -->
                         <div class="property-section" x-show="currentSchema.relationships.length > 0">
-                            <h3>Existing Relationships</h3>
+                            <h3>Existing Relationships (<span x-text="currentSchema.relationships.length"></span>)</h3>
                             <template x-for="relationship in currentSchema.relationships" :key="relationship.id">
-                                <div class="column-item">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 500; font-size: 0.75rem;" x-text="getTableNameById(relationship.from) + ' → ' + getTableNameById(relationship.to)"></div>
-                                        <div style="font-size: 0.625rem; color: var(--gray-500);" x-text="getRelationshipSymbol(relationship.type)"></div>
+                                <div class="relationship-item">
+                                    <div class="relationship-header">
+                                        <span class="relationship-type" x-text="getRelationshipSymbol(relationship.type)"></span>
+                                        <span class="relationship-name" x-text="getTableNameById(relationship.from) + ' → ' + getTableNameById(relationship.to)"></span>
+                                    </div>
+                                    <div class="relationship-details" x-show="relationship.fromColumn && relationship.toColumn">
+                                        <span x-text="relationship.fromColumn + ' → ' + relationship.toColumn"></span>
                                     </div>
                                     <button @click="removeRelationship(relationship.id)" class="btn btn-danger btn-sm">
-                                        ×
+                                        🗑️
                                     </button>
                                 </div>
                             </template>

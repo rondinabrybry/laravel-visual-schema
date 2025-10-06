@@ -91,6 +91,32 @@ After publishing assets, simply upload your Laravel application via FTP. The pac
 | `Space` | Fit canvas to window |
 | `Escape` | Deselect all objects |
 
+## 🔗 ERD Design Features
+
+### Interactive Relationship Drawing
+- **Point-and-Click Drawing**: Click source table → click target table to create relationships
+- **Visual Feedback**: Live preview while drawing relationships with mouse tracking
+- **Crow's Foot Notation**: Professional ERD symbols (one-to-one, one-to-many, many-to-many)
+- **Smart Routing**: Automatic relationship line routing around tables
+
+### Foreign Key Auto-Detection
+- **Convention-Based Detection**: Automatically detects foreign key relationships from column names
+- **Smart Suggestions**: Identifies `user_id` → `users.id` patterns and similar conventions
+- **Bulk Relationship Creation**: Apply all detected relationships with one click
+- **Visual Indicators**: Clearly shows detected vs. manually created relationships
+
+### Relationship Management
+- **Relationship Types**: One-to-One, One-to-Many, Many-to-Many with proper visual notation
+- **Edit Relationships**: Modify relationship types and properties after creation
+- **Delete Relationships**: Remove relationships individually or in bulk
+- **Relationship List**: Sidebar panel showing all relationships with details
+
+### Professional ERD Tools
+- **Drawing Mode Toggle**: Switch between normal editing and relationship drawing modes  
+- **Relationship Toolbox**: Dedicated tools for ERD-specific operations
+- **Visual Relationship Lines**: Clean, professional lines with crow's foot endings
+- **Auto-Layout**: Smart positioning to avoid overlapping relationship lines
+
 ## 🧰 Toolbox Features
 
 ### Quick Add Tools
@@ -130,6 +156,25 @@ After publishing assets, simply upload your Laravel application via FTP. The pac
 ## Usage
 
 After installation, visit `/schema-designer` in your Laravel application (local environment only by default).
+
+### Creating ERD Relationships
+
+1. **Auto-Detection Method** (Recommended):
+   - Click "Detect Foreign Keys" in the ERD Tools panel
+   - Review detected relationships in the sidebar
+   - Click "Apply All" to create all detected relationships at once
+
+2. **Manual Drawing Method**:
+   - Click "Toggle Relationship Mode" to enter drawing mode
+   - Click on the source table (where the foreign key column is)
+   - Click on the target table (the referenced table)
+   - The relationship will be created automatically with proper notation
+
+3. **Managing Relationships**:
+   - View all relationships in the right sidebar panel
+   - Edit relationship types (1:1, 1:M, M:M) using the dropdown
+   - Delete individual relationships using the "Remove" button
+   - Export your ERD diagrams with relationships included
 
 ### Configuration
 

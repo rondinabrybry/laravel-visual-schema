@@ -470,6 +470,177 @@
     background-color: var(--primary-hover);
 }
 
+/* ERD Relationship Tools */
+.erd-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.relationship-info {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.dark .relationship-info {
+    background: var(--gray-700);
+    border-color: var(--gray-600);
+}
+
+.info-text {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--gray-600);
+}
+
+.dark .info-text {
+    color: var(--gray-400);
+}
+
+.info-text strong {
+    color: var(--gray-900);
+    font-weight: 600;
+}
+
+.dark .info-text strong {
+    color: var(--gray-100);
+}
+
+/* ERD Controls */
+.erd-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.drawing-instructions {
+    margin-top: 0.75rem;
+}
+
+.alert {
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.alert-info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: var(--primary-color);
+}
+
+.dark .alert-info {
+    background: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.2);
+}
+
+/* Enhanced relationship items */
+.relationship-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.dark .relationship-item {
+    background: var(--gray-700);
+    border-color: var(--gray-600);
+}
+
+.relationship-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.relationship-type {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 1.5rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+}
+
+.relationship-name {
+    flex: 1;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--gray-900);
+}
+
+.dark .relationship-name {
+    color: var(--gray-100);
+}
+
+.relationship-details {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    font-family: 'Monaco', monospace;
+    background: var(--gray-100);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.dark .relationship-details {
+    color: var(--gray-400);
+    background: var(--gray-600);
+}
+
+.relationship-item .btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Relationship drawing mode styles */
+.canvas-container.drawing-mode {
+    cursor: crosshair !important;
+}
+
+.canvas-container.drawing-mode #schema-canvas {
+    cursor: crosshair !important;
+}
+
+/* Table highlighting for relationship drawing */
+.table-highlighted {
+    stroke: var(--success-color) !important;
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 0 8px var(--success-color)) !important;
+}
+
+/* Relationship line styles */
+.relationship-line {
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.relationship-line:hover {
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Temporary relationship line */
+.temp-relationship-line {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
 /* Toolbar enhancements */
 .toolbar-section {
     display: flex;

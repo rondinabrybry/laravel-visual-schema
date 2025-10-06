@@ -37,6 +37,11 @@ function schemaDesigner() {
         gridSize: 20,
         showGrid: true,
         
+        // Relationship drawing mode
+        isDrawingRelationship: false,
+        relationshipStartTable: null,
+        tempRelationshipLine: null,
+        
         // History for undo/redo
         history: [],
         historyIndex: -1,
@@ -121,6 +126,19 @@ function schemaDesigner() {
 
             this.fabricCanvas.on('path:created', () => {
                 this.addToHistory('Path created');
+            });
+
+            // Relationship drawing events
+            this.fabricCanvas.on('mouse:down', (e) => {
+                this.handleCanvasMouseDown(e);
+            });
+
+            this.fabricCanvas.on('mouse:move', (e) => {
+                this.handleCanvasMouseMove(e);
+            });
+
+            this.fabricCanvas.on('mouse:up', (e) => {
+                this.handleCanvasMouseUp(e);
             });
 
             // Handle window resize
@@ -500,8 +518,88 @@ function schemaDesigner() {
                 type: 'varchar',
                 nullable: true,
                 primary: false,
-                autoIncrement: false
+                autoIncrement: false,
+                foreignKey: false,
+                references: null
             });
+        },
+
+        /**
+         * Detect potential foreign key relationships
+         */
+        detectForeignKeys() {
+            const suggestions = [];
+            
+            this.currentSchema.tables.forEach(table => {
+                table.columns.forEach(column => {
+                    // Check if column name suggests a foreign key (ends with _id)
+                    if (column.name.endsWith('_id') && column.name !== 'id') {
+                        const referencedTableName = column.name.replace('_id', '');
+                        const referencedTable = this.currentSchema.tables.find(t => 
+                            t.name === referencedTableName || 
+                            t.name === referencedTableName + 's' ||
+                            t.name === referencedTableName.slice(0, -1) // handle plurals
+                        );
+                        
+                        if (referencedTable) {
+                            // Check if relationship already exists
+                            const existingRelation = this.currentSchema.relationships.find(r => 
+                                (r.from === table.id && r.to === referencedTable.id) ||
+                                (r.from === referencedTable.id && r.to === table.id)
+                            );
+                            
+                            if (!existingRelation) {
+                                suggestions.push({
+                                    fromTable: referencedTable.id,
+                                    toTable: table.id,
+                                    fromColumn: 'id',
+                                    toColumn: column.name,
+                                    type: 'one-to-many',
+                                    confidence: 'high'
+                                });
+                            }
+                        }
+                    }
+                });
+            });
+            
+            return suggestions;
+        },
+
+        /**
+         * Auto-create relationships based on foreign key detection
+         */
+        autoCreateRelationships() {
+            const suggestions = this.detectForeignKeys();
+            let createdCount = 0;
+            
+            suggestions.forEach(suggestion => {
+                const relationship = {
+                    id: 'rel_' + Date.now() + '_' + createdCount,
+                    from: suggestion.fromTable,
+                    to: suggestion.toTable,
+                    type: suggestion.type,
+                    fromColumn: suggestion.fromColumn,
+                    toColumn: suggestion.toColumn
+                };
+                
+                // Create visual relationship
+                this.createRelationshipVisual(relationship);
+                
+                // Add to schema data
+                this.currentSchema.relationships.push(relationship);
+                createdCount++;
+            });
+            
+            if (createdCount > 0) {
+                this.addToHistory(`Auto-created ${createdCount} relationships`);
+                this.saveCanvasState();
+                this.fabricCanvas.renderAll();
+                
+                alert(`Created ${createdCount} relationships based on foreign key detection!`);
+            } else {
+                alert('No potential relationships detected. Make sure your tables have columns ending with "_id" that match other table names.');
+            }
         },
 
         /**
@@ -567,37 +665,50 @@ function schemaDesigner() {
             
             if (!fromTable || !toTable) return;
 
-            // Calculate connection points
-            const fromPoint = this.getTableConnectionPoint(fromTable);
-            const toPoint = this.getTableConnectionPoint(toTable);
+            // Calculate optimal connection points
+            const fromPoint = this.getOptimalConnectionPoint(fromTable, toTable);
+            const toPoint = this.getOptimalConnectionPoint(toTable, fromTable);
 
-            // Create relationship line
-            const line = new fabric.Line([fromPoint.x, fromPoint.y, toPoint.x, toPoint.y], {
+            // Create relationship line with curves for better ERD appearance
+            const path = this.createRelationshipPath(fromPoint, toPoint, relationship.type);
+            
+            const relationshipLine = new fabric.Path(path, {
                 stroke: this.isDarkMode ? '#60a5fa' : '#3b82f6',
                 strokeWidth: 2,
+                fill: '',
                 selectable: true,
-                evented: true
+                evented: true,
+                strokeDashArray: relationship.type === 'many-to-many' ? [5, 5] : null
             });
 
-            // Add relationship type indicator
+            // Add relationship symbols at endpoints
+            const fromSymbol = this.createRelationshipSymbol(fromPoint, relationship.type, 'from');
+            const toSymbol = this.createRelationshipSymbol(toPoint, relationship.type, 'to');
+
+            // Add relationship label
             const midX = (fromPoint.x + toPoint.x) / 2;
             const midY = (fromPoint.y + toPoint.y) / 2;
             
-            const typeText = new fabric.Text(this.getRelationshipSymbol(relationship.type), {
+            const relationshipLabel = new fabric.Text(this.getRelationshipLabel(relationship), {
                 left: midX,
-                top: midY,
-                fontSize: 12,
+                top: midY - 10,
+                fontSize: 10,
                 fill: this.isDarkMode ? '#60a5fa' : '#3b82f6',
                 fontFamily: 'Arial, sans-serif',
                 originX: 'center',
                 originY: 'center',
-                backgroundColor: this.isDarkMode ? '#1f2937' : '#ffffff'
+                backgroundColor: this.isDarkMode ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                padding: 2
             });
 
-            // Group line and text
-            const relationshipGroup = new fabric.Group([line, typeText], {
+            // Group all relationship elements
+            const relationshipGroup = new fabric.Group([relationshipLine, fromSymbol, toSymbol, relationshipLabel], {
                 selectable: true,
-                evented: true
+                evented: true,
+                hasControls: false,
+                hasBorders: true,
+                lockMovementX: false,
+                lockMovementY: false
             });
 
             relationshipGroup.set({
@@ -607,6 +718,148 @@ function schemaDesigner() {
             });
 
             this.fabricCanvas.add(relationshipGroup);
+            this.fabricCanvas.sendToBack(relationshipGroup);
+        },
+
+        /**
+         * Create curved path for relationship line
+         */
+        createRelationshipPath(fromPoint, toPoint, relationshipType) {
+            const dx = toPoint.x - fromPoint.x;
+            const dy = toPoint.y - fromPoint.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Add slight curve for better visual appearance
+            const curvature = Math.min(distance * 0.1, 30);
+            const midX = (fromPoint.x + toPoint.x) / 2;
+            const midY = (fromPoint.y + toPoint.y) / 2;
+            
+            // Calculate perpendicular offset for curve
+            const perpX = -dy / distance * curvature;
+            const perpY = dx / distance * curvature;
+            
+            const controlX = midX + perpX;
+            const controlY = midY + perpY;
+            
+            return `M ${fromPoint.x} ${fromPoint.y} Q ${controlX} ${controlY} ${toPoint.x} ${toPoint.y}`;
+        },
+
+        /**
+         * Create relationship symbol (crow's foot notation)
+         */
+        createRelationshipSymbol(point, relationshipType, side) {
+            const symbolSize = 8;
+            let symbol;
+            
+            // Determine symbol based on relationship type and side
+            if (relationshipType === 'one-to-many') {
+                if (side === 'from') {
+                    // One side - small circle
+                    symbol = new fabric.Circle({
+                        left: point.x - symbolSize/2,
+                        top: point.y - symbolSize/2,
+                        radius: symbolSize/2,
+                        fill: '',
+                        stroke: this.isDarkMode ? '#60a5fa' : '#3b82f6',
+                        strokeWidth: 2
+                    });
+                } else {
+                    // Many side - crow's foot
+                    const path = `M ${point.x} ${point.y} L ${point.x - symbolSize} ${point.y - symbolSize/2} M ${point.x} ${point.y} L ${point.x - symbolSize} ${point.y + symbolSize/2} M ${point.x} ${point.y} L ${point.x - symbolSize} ${point.y}`;
+                    symbol = new fabric.Path(path, {
+                        stroke: this.isDarkMode ? '#60a5fa' : '#3b82f6',
+                        strokeWidth: 2,
+                        fill: ''
+                    });
+                }
+            } else if (relationshipType === 'many-to-many') {
+                // Many on both sides - crow's foot
+                const path = `M ${point.x} ${point.y} L ${point.x - symbolSize} ${point.y - symbolSize/2} M ${point.x} ${point.y} L ${point.x - symbolSize} ${point.y + symbolSize/2} M ${point.x} ${point.y} L ${point.x - symbolSize} ${point.y}`;
+                symbol = new fabric.Path(path, {
+                    stroke: this.isDarkMode ? '#60a5fa' : '#3b82f6',
+                    strokeWidth: 2,
+                    fill: ''
+                });
+            } else {
+                // One-to-one - circles on both sides
+                symbol = new fabric.Circle({
+                    left: point.x - symbolSize/2,
+                    top: point.y - symbolSize/2,
+                    radius: symbolSize/2,
+                    fill: '',
+                    stroke: this.isDarkMode ? '#60a5fa' : '#3b82f6',
+                    strokeWidth: 2
+                });
+            }
+            
+            return symbol;
+        },
+
+        /**
+         * Get optimal connection point between two tables
+         */
+        getOptimalConnectionPoint(fromTable, toTable) {
+            const fromBounds = fromTable.getBoundingRect();
+            const toBounds = toTable.getBoundingRect();
+            
+            const fromCenterX = fromBounds.left + fromBounds.width / 2;
+            const fromCenterY = fromBounds.top + fromBounds.height / 2;
+            const toCenterX = toBounds.left + toBounds.width / 2;
+            const toCenterY = toBounds.top + toBounds.height / 2;
+            
+            // Determine which side of the table to connect to
+            const dx = toCenterX - fromCenterX;
+            const dy = toCenterY - fromCenterY;
+            
+            let connectionPoint = {};
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Connect to left or right side
+                if (dx > 0) {
+                    // Connect to right side of fromTable
+                    connectionPoint = {
+                        x: fromBounds.left + fromBounds.width,
+                        y: fromCenterY
+                    };
+                } else {
+                    // Connect to left side of fromTable
+                    connectionPoint = {
+                        x: fromBounds.left,
+                        y: fromCenterY
+                    };
+                }
+            } else {
+                // Connect to top or bottom side
+                if (dy > 0) {
+                    // Connect to bottom side of fromTable
+                    connectionPoint = {
+                        x: fromCenterX,
+                        y: fromBounds.top + fromBounds.height
+                    };
+                } else {
+                    // Connect to top side of fromTable
+                    connectionPoint = {
+                        x: fromCenterX,
+                        y: fromBounds.top
+                    };
+                }
+            }
+            
+            return connectionPoint;
+        },
+
+        /**
+         * Get relationship label
+         */
+        getRelationshipLabel(relationship) {
+            const fromTable = this.getTableNameById(relationship.from);
+            const toTable = this.getTableNameById(relationship.to);
+            
+            if (relationship.fromColumn && relationship.toColumn) {
+                return `${fromTable}.${relationship.fromColumn} → ${toTable}.${relationship.toColumn}`;
+            }
+            
+            return this.getRelationshipSymbol(relationship.type);
         },
 
         /**
@@ -1363,6 +1616,183 @@ function schemaDesigner() {
                 this.addToHistory('Duplicated object');
                 this.saveCanvasState();
             });
+        },
+
+        /**
+         * Toggle relationship drawing mode
+         */
+        toggleRelationshipMode() {
+            this.isDrawingRelationship = !this.isDrawingRelationship;
+            
+            if (this.isDrawingRelationship) {
+                this.fabricCanvas.defaultCursor = 'crosshair';
+                this.fabricCanvas.hoverCursor = 'crosshair';
+                this.fabricCanvas.selection = false;
+                
+                // Highlight all tables
+                this.highlightTables(true);
+            } else {
+                this.fabricCanvas.defaultCursor = 'default';
+                this.fabricCanvas.hoverCursor = 'move';
+                this.fabricCanvas.selection = true;
+                
+                // Remove highlights
+                this.highlightTables(false);
+                
+                // Clean up any temporary line
+                if (this.tempRelationshipLine) {
+                    this.fabricCanvas.remove(this.tempRelationshipLine);
+                    this.tempRelationshipLine = null;
+                }
+                
+                this.relationshipStartTable = null;
+            }
+            
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Highlight tables for relationship drawing
+         */
+        highlightTables(highlight) {
+            const tables = this.fabricCanvas.getObjects().filter(obj => obj.type === 'table' || obj.tableId);
+            
+            tables.forEach(table => {
+                if (highlight) {
+                    table.set({
+                        stroke: this.isDarkMode ? '#10b981' : '#059669',
+                        strokeWidth: 3,
+                        shadow: {
+                            color: this.isDarkMode ? '#10b981' : '#059669',
+                            blur: 10,
+                            offsetX: 0,
+                            offsetY: 0
+                        }
+                    });
+                } else {
+                    table.set({
+                        stroke: this.isDarkMode ? '#6b7280' : '#d1d5db',
+                        strokeWidth: 1,
+                        shadow: {
+                            color: 'rgba(0, 0, 0, 0.1)',
+                            blur: 5,
+                            offsetX: 2,
+                            offsetY: 2
+                        }
+                    });
+                }
+            });
+        },
+
+        /**
+         * Handle canvas mouse down for relationship drawing
+         */
+        handleCanvasMouseDown(e) {
+            if (!this.isDrawingRelationship) return;
+            
+            const target = e.target;
+            
+            // Check if clicked on a table
+            if (target && (target.type === 'table' || target.tableId)) {
+                if (!this.relationshipStartTable) {
+                    // Start drawing relationship
+                    this.relationshipStartTable = target;
+                    
+                    // Create temporary line
+                    const pointer = this.fabricCanvas.getPointer(e.e);
+                    const startPoint = this.getOptimalConnectionPoint(target, { getBoundingRect: () => ({ left: pointer.x, top: pointer.y, width: 0, height: 0 }) });
+                    
+                    this.tempRelationshipLine = new fabric.Line([startPoint.x, startPoint.y, pointer.x, pointer.y], {
+                        stroke: this.isDarkMode ? '#10b981' : '#059669',
+                        strokeWidth: 2,
+                        strokeDashArray: [5, 5],
+                        selectable: false,
+                        evented: false
+                    });
+                    
+                    this.fabricCanvas.add(this.tempRelationshipLine);
+                } else if (target !== this.relationshipStartTable) {
+                    // End drawing relationship
+                    this.createQuickRelationship(this.relationshipStartTable, target);
+                    
+                    // Clean up
+                    if (this.tempRelationshipLine) {
+                        this.fabricCanvas.remove(this.tempRelationshipLine);
+                        this.tempRelationshipLine = null;
+                    }
+                    
+                    this.relationshipStartTable = null;
+                    this.toggleRelationshipMode(); // Exit drawing mode
+                }
+            }
+        },
+
+        /**
+         * Handle canvas mouse move for relationship drawing
+         */
+        handleCanvasMouseMove(e) {
+            if (!this.isDrawingRelationship || !this.relationshipStartTable || !this.tempRelationshipLine) return;
+            
+            const pointer = this.fabricCanvas.getPointer(e.e);
+            const startPoint = this.getOptimalConnectionPoint(this.relationshipStartTable, { getBoundingRect: () => ({ left: pointer.x, top: pointer.y, width: 0, height: 0 }) });
+            
+            this.tempRelationshipLine.set({
+                x1: startPoint.x,
+                y1: startPoint.y,
+                x2: pointer.x,
+                y2: pointer.y
+            });
+            
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Handle canvas mouse up for relationship drawing
+         */
+        handleCanvasMouseUp(e) {
+            // Currently handled in mouse down
+        },
+
+        /**
+         * Create quick relationship between two tables
+         */
+        createQuickRelationship(fromTable, toTable) {
+            const relationship = {
+                id: 'rel_' + Date.now(),
+                from: fromTable.tableId,
+                to: toTable.tableId,
+                type: 'one-to-many',
+                fromColumn: 'id',
+                toColumn: this.suggestForeignKeyColumn(fromTable, toTable)
+            };
+
+            // Create visual relationship
+            this.createRelationshipVisual(relationship);
+            
+            // Add to schema data
+            this.currentSchema.relationships.push(relationship);
+            
+            this.addToHistory(`Drew relationship: ${this.getTableNameById(relationship.from)} → ${this.getTableNameById(relationship.to)}`);
+            this.saveCanvasState();
+            this.fabricCanvas.renderAll();
+        },
+
+        /**
+         * Suggest foreign key column name
+         */
+        suggestForeignKeyColumn(fromTable, toTable) {
+            const fromTableData = this.currentSchema.tables.find(t => t.id === fromTable.tableId);
+            const toTableData = this.currentSchema.tables.find(t => t.id === toTable.tableId);
+            
+            if (!fromTableData || !toTableData) return 'id';
+            
+            // Look for existing foreign key column
+            const foreignKeyColumn = toTableData.columns.find(col => 
+                col.name === fromTableData.name + '_id' ||
+                col.name === fromTableData.name.slice(0, -1) + '_id' // handle plurals
+            );
+            
+            return foreignKeyColumn ? foreignKeyColumn.name : fromTableData.name + '_id';
         }
     };
 }

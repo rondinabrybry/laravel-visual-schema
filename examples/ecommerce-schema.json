@@ -1,0 +1,310 @@
+{
+    "name": "E-commerce Database Schema",
+    "data": {
+        "tables": {
+            "users": {
+                "name": "users",
+                "columns": {
+                    "id": {
+                        "name": "id",
+                        "type": "bigint",
+                        "primary": true,
+                        "nullable": false
+                    },
+                    "name": {
+                        "name": "name",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false
+                    },
+                    "email": {
+                        "name": "email",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false,
+                        "unique": true
+                    },
+                    "email_verified_at": {
+                        "name": "email_verified_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    },
+                    "password": {
+                        "name": "password",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false
+                    },
+                    "created_at": {
+                        "name": "created_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "name": "updated_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    }
+                }
+            },
+            "categories": {
+                "name": "categories",
+                "columns": {
+                    "id": {
+                        "name": "id",
+                        "type": "bigint",
+                        "primary": true,
+                        "nullable": false
+                    },
+                    "name": {
+                        "name": "name",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false
+                    },
+                    "slug": {
+                        "name": "slug",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false,
+                        "unique": true
+                    },
+                    "description": {
+                        "name": "description",
+                        "type": "text",
+                        "nullable": true
+                    },
+                    "parent_id": {
+                        "name": "parent_id",
+                        "type": "bigint",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "name": "created_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "name": "updated_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    }
+                }
+            },
+            "products": {
+                "name": "products",
+                "columns": {
+                    "id": {
+                        "name": "id",
+                        "type": "bigint",
+                        "primary": true,
+                        "nullable": false
+                    },
+                    "name": {
+                        "name": "name",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false
+                    },
+                    "slug": {
+                        "name": "slug",
+                        "type": "varchar",
+                        "length": 255,
+                        "nullable": false,
+                        "unique": true
+                    },
+                    "description": {
+                        "name": "description",
+                        "type": "text",
+                        "nullable": true
+                    },
+                    "price": {
+                        "name": "price",
+                        "type": "decimal",
+                        "precision": "10,2",
+                        "nullable": false
+                    },
+                    "stock_quantity": {
+                        "name": "stock_quantity",
+                        "type": "int",
+                        "nullable": false,
+                        "default": "0"
+                    },
+                    "category_id": {
+                        "name": "category_id",
+                        "type": "bigint",
+                        "nullable": false
+                    },
+                    "is_active": {
+                        "name": "is_active",
+                        "type": "boolean",
+                        "nullable": false,
+                        "default": "true"
+                    },
+                    "created_at": {
+                        "name": "created_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "name": "updated_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    }
+                }
+            },
+            "orders": {
+                "name": "orders",
+                "columns": {
+                    "id": {
+                        "name": "id",
+                        "type": "bigint",
+                        "primary": true,
+                        "nullable": false
+                    },
+                    "user_id": {
+                        "name": "user_id",
+                        "type": "bigint",
+                        "nullable": false
+                    },
+                    "status": {
+                        "name": "status",
+                        "type": "varchar",
+                        "length": 50,
+                        "nullable": false,
+                        "default": "pending"
+                    },
+                    "total_amount": {
+                        "name": "total_amount",
+                        "type": "decimal",
+                        "precision": "10,2",
+                        "nullable": false
+                    },
+                    "shipping_address": {
+                        "name": "shipping_address",
+                        "type": "text",
+                        "nullable": false
+                    },
+                    "billing_address": {
+                        "name": "billing_address",
+                        "type": "text",
+                        "nullable": false
+                    },
+                    "created_at": {
+                        "name": "created_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "name": "updated_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    }
+                }
+            },
+            "order_items": {
+                "name": "order_items",
+                "columns": {
+                    "id": {
+                        "name": "id",
+                        "type": "bigint",
+                        "primary": true,
+                        "nullable": false
+                    },
+                    "order_id": {
+                        "name": "order_id",
+                        "type": "bigint",
+                        "nullable": false
+                    },
+                    "product_id": {
+                        "name": "product_id",
+                        "type": "bigint",
+                        "nullable": false
+                    },
+                    "quantity": {
+                        "name": "quantity",
+                        "type": "int",
+                        "nullable": false
+                    },
+                    "price": {
+                        "name": "price",
+                        "type": "decimal",
+                        "precision": "10,2",
+                        "nullable": false
+                    },
+                    "created_at": {
+                        "name": "created_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "name": "updated_at",
+                        "type": "timestamp",
+                        "nullable": true
+                    }
+                }
+            }
+        },
+        "relationships": {
+            "user_orders": {
+                "type": "one-to-many",
+                "from_table": "users",
+                "from_column": "id",
+                "to_table": "orders",
+                "to_column": "user_id"
+            },
+            "category_products": {
+                "type": "one-to-many",
+                "from_table": "categories",
+                "from_column": "id",
+                "to_table": "products",
+                "to_column": "category_id"
+            },
+            "category_parent": {
+                "type": "one-to-many",
+                "from_table": "categories",
+                "from_column": "id",
+                "to_table": "categories",
+                "to_column": "parent_id"
+            },
+            "order_items_order": {
+                "type": "one-to-many",
+                "from_table": "orders",
+                "from_column": "id",
+                "to_table": "order_items",
+                "to_column": "order_id"
+            },
+            "order_items_product": {
+                "type": "one-to-many",
+                "from_table": "products",
+                "from_column": "id",
+                "to_table": "order_items",
+                "to_column": "product_id"
+            }
+        },
+        "layout": {
+            "users": {
+                "x": 100,
+                "y": 100
+            },
+            "categories": {
+                "x": 400,
+                "y": 100
+            },
+            "products": {
+                "x": 700,
+                "y": 100
+            },
+            "orders": {
+                "x": 100,
+                "y": 400
+            },
+            "order_items": {
+                "x": 400,
+                "y": 400
+            }
+        }
+    },
+    "created_at": "2024-10-06T12:00:00Z",
+    "updated_at": "2024-10-06T12:00:00Z"
+}

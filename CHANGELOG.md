@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-10-06
+
+### Added
+- 🚀 **Laravel 12 Support**: Full compatibility with Laravel 12.x
+- ⚡ **PHP 8.4 Support**: Added support for PHP 8.4
+- 🔧 **Enhanced Service Registration**: Improved service container bindings for better performance
+
+### Changed
+- 📦 **Minimum Requirements**: Updated minimum PHP version to 8.2
+- 🧪 **Testing Matrix**: Updated CI/CD to test against Laravel 10, 11, and 12
+- 📚 **Documentation**: Updated installation and requirements documentation
+
+### Improved
+- 🏗️ **Service Provider**: Enhanced service registration with singleton bindings
+- 🔧 **Dependencies**: Updated Orchestra Testbench and PHPUnit versions for Laravel 12 compatibility
+
 ## [1.0.0] - 2024-10-06
 
 ### Added

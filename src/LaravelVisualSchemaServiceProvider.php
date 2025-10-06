@@ -4,12 +4,26 @@ namespace BryBry\LaravelVisualSchema;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use BryBry\LaravelVisualSchema\Services\SchemaStorageService;
+use BryBry\LaravelVisualSchema\Services\SchemaExportService;
+use BryBry\LaravelVisualSchema\Services\SchemaValidationService;
+use BryBry\LaravelVisualSchema\Services\SchemaImportService;
+use BryBry\LaravelVisualSchema\Support\LaravelVersionChecker;
 
 class LaravelVisualSchemaServiceProvider extends ServiceProvider
 {
     public function register()
     {
         $this->mergeConfigFrom(__DIR__.'/../config/schema-designer.php', 'schema-designer');
+        
+        // Check Laravel version compatibility
+        LaravelVersionChecker::checkCompatibility();
+        
+        // Register services
+        $this->app->singleton(SchemaStorageService::class);
+        $this->app->singleton(SchemaExportService::class);
+        $this->app->singleton(SchemaValidationService::class);
+        $this->app->singleton(SchemaImportService::class);
     }
 
     public function boot()

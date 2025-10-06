@@ -44,6 +44,15 @@ return [
 ];
 ```
 
+### Laravel 12 Compatibility
+
+This package is fully compatible with Laravel 12 and takes advantage of:
+
+- **Enhanced Service Container**: Optimized service registration with singleton bindings
+- **Modern PHP Features**: Support for PHP 8.2+ features including readonly properties and enums
+- **Improved Asset Handling**: Compatible with Laravel 12's updated Vite integration
+- **Performance Improvements**: Leverages Laravel 12's performance enhancements
+
 ## 🎨 Features
 
 ### Canvas & Interface

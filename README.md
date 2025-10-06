@@ -4,6 +4,8 @@ A comprehensive drag-and-drop visual database designer for Laravel applications.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/brybry/laravel-visual-schema.svg?style=flat-square)](https://packagist.org/packages/brybry/laravel-visual-schema)
 [![Total Downloads](https://img.shields.io/packagist/dt/brybry/laravel-visual-schema.svg?style=flat-square)](https://packagist.org/packages/brybry/laravel-visual-schema)
+[![Laravel 12 Ready](https://img.shields.io/badge/Laravel-12%20Ready-green.svg?style=flat-square)](https://laravel.com)
+[![PHP 8.2+](https://img.shields.io/badge/PHP-8.2+-blue.svg?style=flat-square)](https://php.net)
 
 ## Features
 
@@ -16,6 +18,7 @@ A comprehensive drag-and-drop visual database designer for Laravel applications.
 - 🌙 **Dark/Light Mode** - Theme support
 - ↩️ **Undo/Redo** - Full action history
 - 🔍 **Zoom & Pan** - Navigate large schemas easily
+- 🚀 **Laravel 12 Ready** - Full compatibility with Laravel 10, 11, and 12
 
 ## Installation
 
@@ -67,8 +70,8 @@ By default, the schema designer is only accessible in local environments. Config
 
 ## Requirements
 
-- PHP 8.1+
-- Laravel 10+
+- PHP 8.2+
+- Laravel 10+, 11+, or 12+
 - Node.js (for asset compilation)
 
 ## License

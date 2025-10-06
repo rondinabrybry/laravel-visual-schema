@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-- PHP 8.1 or higher
-- Laravel 10 or higher
-- Node.js 16+ (for frontend asset compilation)
+- PHP 8.2 or higher
+- Laravel 10, 11, or 12
+- Node.js 18+ (for frontend asset compilation)
 - Composer
 
 ## Installation Steps
